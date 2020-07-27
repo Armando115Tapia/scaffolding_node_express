@@ -1,6 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
+import errorMiddleware from './middleware/error.middleware';
 const { MONGO_URI } = process.env;
 
 class App {
@@ -14,6 +15,7 @@ class App {
     this.connectToTheDatabase();
     this.initializeMiddlewares();
     this.initializeControllers(controllers);
+    this.initializeErrorHandling();
   }
 
   private initializeMiddlewares() {
@@ -39,7 +41,10 @@ class App {
     } catch (e) {
       console.log(e);
     }
+  }
 
+  private initializeErrorHandling() {
+    this.app.use(errorMiddleware);
   }
 
   public listen() {

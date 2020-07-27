@@ -1,6 +1,9 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import postModel from './posts.model';
 import Post from './post.interface';
+import { nextTick } from 'process';
+import HttpException from '../exceptions/HttpException';
+import PostNotFoundException from '../exceptions/PostNotFoundException';
 
 class PostsController {
   public path = '/posts';
@@ -24,27 +27,48 @@ class PostsController {
     response.send(post);
   };
 
-  getPostById = async (request: Request, response: Response) => {
+  getPostById = async (
+    request: Request,
+    response: Response,
+    next: NextFunction
+  ) => {
     const id = request.params?.id;
-    const postById = await this.post.findById(id);
-    response.send(postById);
+    try {
+      const postById = await this.post.findById(id);
+      // console.log('postById: ', postById);
+      response.send(postById);
+    } catch (e) {
+      next(new PostNotFoundException(id));
+    }
   };
-  modifyPost = async (request: Request, response: Response) => {
+  modifyPost = async (
+    request: Request,
+    response: Response,
+    next: NextFunction
+  ) => {
     const id = request.params?.id;
-    const newData: Post = request.body;
-    const updatedPost = await this.post.findByIdAndUpdate(id, newData, {
-      new: true,
-    });
-    response.send(updatedPost);
+    try {
+      const newData: Post = request.body;
+      const updatedPost = await this.post.findByIdAndUpdate(id, newData, {
+        new: true,
+      });
+      response.send(updatedPost);
+    } catch (e) {
+      next(new PostNotFoundException(id));
+    }
   };
 
-  deletePost = async (request: Request, response: Response) => {
+  deletePost = async (
+    request: Request,
+    response: Response,
+    next: NextFunction
+  ) => {
     const id = request.params?.id;
-    const deletedPost = await this.post.findByIdAndDelete(id);
-    if (deletedPost) {
+    try {
+      const deletedPost = await this.post.findByIdAndDelete(id);
       response.send(deletedPost);
-    } else {
-      response.send(404);
+    } catch (e) {
+      next(new PostNotFoundException(id));
     }
   };
   createPost = async (request: Request, response: Response) => {
