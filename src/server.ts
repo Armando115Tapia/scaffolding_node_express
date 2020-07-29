@@ -5,7 +5,11 @@ import App from './app';
 // validateEnv();
 
 import PostsController from './post/posts.controller';
+import AuthenticationController from './authentication/authentication.controller';
 const { PORT } = process.env;
 
-const app = new App([new PostsController()], 5000);
+const app = new App(
+  [new PostsController(), new AuthenticationController()],
+  5000
+);
 app.listen();
