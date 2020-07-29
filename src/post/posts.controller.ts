@@ -1,11 +1,10 @@
 import express, { Request, Response, NextFunction } from 'express';
 import postModel from './posts.model';
 import Post from './post.interface';
-import { nextTick } from 'process';
-import HttpException from '../exceptions/HttpException';
 import PostNotFoundException from '../exceptions/PostNotFoundException';
 import validationMiddleware from '../middleware/validation.middleware';
 import CreatePostDto from './post.dto';
+import authMiddleware from '../middleware/auth.middleware';
 
 class PostsController {
   public path = '/posts';
@@ -19,17 +18,21 @@ class PostsController {
   private initializeRoutes() {
     this.router.get(this.path, this.getAllPosts);
     this.router.get(`${this.path}/:id`, this.getPostById);
-    this.router.patch(
-      `${this.path}/:id`,
-      validationMiddleware(CreatePostDto, true),
-      this.modifyPost
-    );
-    this.router.delete(`${this.path}/:id`, this.deletePost);
-    this.router.post(
-      this.path,
-      validationMiddleware(CreatePostDto),
-      this.createPost
-    );
+
+    this.router
+      .all(`${this.path}/*`, authMiddleware)
+      .patch(
+        `${this.path}/:id`,
+        validationMiddleware(CreatePostDto, true),
+        this.modifyPost
+      )
+      .delete(`${this.path}/:id`, this.deletePost)
+      .post(
+        this.path,
+        authMiddleware,
+        validationMiddleware(CreatePostDto),
+        this.createPost
+      );
   }
 
   getAllPosts = async (request: Request, response: Response) => {
@@ -82,8 +85,11 @@ class PostsController {
     }
   };
   createPost = async (request: Request, response: Response) => {
-    const postData: Post = request.body;
-    const createdPost = new this.post(postData);
+    const postData: CreatePostDto = request.body;
+    const createdPost = new this.post({
+      ...postData,
+      autorId: request.user._id,
+    });
     const newPost = await createdPost.save();
     response.send(newPost);
   };
