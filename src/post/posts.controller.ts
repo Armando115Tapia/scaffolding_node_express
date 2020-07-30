@@ -36,8 +36,8 @@ class PostsController {
   }
 
   getAllPosts = async (request: Request, response: Response) => {
-    const post = await postModel.find();
-    response.send(post);
+    const posts = await postModel.find().populate('author', '-password');
+    response.send(posts);
   };
 
   getPostById = async (
@@ -88,9 +88,10 @@ class PostsController {
     const postData: CreatePostDto = request.body;
     const createdPost = new this.post({
       ...postData,
-      autorId: request.user._id,
+      author: request.user._id,
     });
     const newPost = await createdPost.save();
+    await newPost.populate('author', '-password').execPopulate();
     response.send(newPost);
   };
 }
