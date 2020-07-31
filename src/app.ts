@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import errorMiddleware from './middleware/error.middleware';
+
 const { MONGO_URI } = process.env;
 
 class App {

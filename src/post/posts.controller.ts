@@ -1,15 +1,19 @@
 import express, { Request, Response, NextFunction } from 'express';
 import postModel from './posts.model';
-import Post from './post.interface';
+// import Post from './post.interface';
 import PostNotFoundException from '../exceptions/PostNotFoundException';
 import validationMiddleware from '../middleware/validation.middleware';
 import CreatePostDto from './post.dto';
 import authMiddleware from '../middleware/auth.middleware';
+import { getRepository } from 'typeorm';
+import Post from './post.entity';
 
 class PostsController {
   public path = '/posts';
   public router = express.Router();
-  private post = postModel;
+  // THIS IS FOR
+  // private post = postModel;
+  private postRepository = getRepository(Post);
 
   constructor() {
     this.initializeRoutes();
@@ -36,7 +40,15 @@ class PostsController {
   }
 
   getAllPosts = async (request: Request, response: Response) => {
-    const posts = await postModel.find().populate('author', '-password');
+    //========================================
+    // WITH TYPEORM
+    //========================================
+    const posts = await this.postRepository.find();
+
+    //========================================
+    // WITH MONGOOSE
+    //========================================
+    // const posts = await postModel.find().populate('author', '-password');
     response.send(posts);
   };
 
@@ -47,8 +59,15 @@ class PostsController {
   ) => {
     const id = request.params?.id;
     try {
-      const postById = await this.post.findById(id);
-      // console.log('postById: ', postById);
+      //========================================
+      // WITH TYPEORM
+      //========================================
+      const postById = await this.postRepository.findOne(id);
+
+      //========================================
+      // WITH MONGOOSE
+      //========================================
+      //const postById = await this.post.findById(id);
       response.send(postById);
     } catch (e) {
       next(new PostNotFoundException(id));
@@ -62,9 +81,17 @@ class PostsController {
     const id = request.params?.id;
     try {
       const newData: Post = request.body;
-      const updatedPost = await this.post.findByIdAndUpdate(id, newData, {
+      //========================================
+      // WITH TYPEORM
+      //========================================
+      const updatedPost = await this.postRepository.update(id, newData);
+
+      //========================================
+      // WITH MONGOOSE
+      //========================================
+      /*const updatedPost = await this.post.findByIdAndUpdate(id, newData, {
         new: true,
-      });
+      });*/
       response.send(updatedPost);
     } catch (e) {
       next(new PostNotFoundException(id));
@@ -78,7 +105,14 @@ class PostsController {
   ) => {
     const id = request.params?.id;
     try {
-      const deletedPost = await this.post.findByIdAndDelete(id);
+      //========================================
+      // WITH TYPEORM
+      //========================================
+      const deletedPost = await this.postRepository.delete(id);
+      //========================================
+      // WITH MONGOOSE
+      //========================================
+      // const deletedPost = await this.post.findByIdAndDelete(id);
       response.send(deletedPost);
     } catch (e) {
       next(new PostNotFoundException(id));
@@ -86,12 +120,23 @@ class PostsController {
   };
   createPost = async (request: Request, response: Response) => {
     const postData: CreatePostDto = request.body;
-    const createdPost = new this.post({
+
+    //========================================
+    // WITH TYPEORM
+    //========================================
+    const newPost = this.postRepository.create(postData);
+    await this.postRepository.save(newPost);
+
+    //========================================
+    // WITH MONGOOSE
+    //========================================
+
+    /*const createdPost = new this.post({
       ...postData,
       author: request.user._id,
     });
     const newPost = await createdPost.save();
-    await newPost.populate('author', '-password').execPopulate();
+    await newPost.populate('author', '-password').execPopulate();*/
     response.send(newPost);
   };
 }
