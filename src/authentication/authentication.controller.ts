@@ -1,4 +1,5 @@
-import express, { Request, Response, NextFunction } from 'express';
+// import express, { Request, Response, NextFunction } from 'express';
+import * as express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 
@@ -37,9 +38,9 @@ class AuthenticationController implements Controller {
   }
 
   private registration = async (
-    request: Request,
-    response: Response,
-    next: NextFunction
+    request: express.Request,
+    response: express.Response,
+    next: express.NextFunction
   ) => {
     const userData: CreateUserDTO = request.body;
     if (await this.user.findOne({ email: userData.email })) {
@@ -58,9 +59,9 @@ class AuthenticationController implements Controller {
   };
 
   private loggingIn = async (
-    request: Request,
-    response: Response,
-    next: NextFunction
+    request: express.Request,
+    response: express.Response,
+    next: express.NextFunction
   ) => {
     const logIndata: LogInDto = request.body;
     const user = await this.user.findOne({ email: logIndata.email });
@@ -99,7 +100,7 @@ class AuthenticationController implements Controller {
     return `Authorization=${tokenData.token};HttpOnly; Max-Age=${tokenData.expiresIn} `;
   }
 
-  private loggingOut = (request: Request, response: Response) => {
+  private loggingOut = (request: express.Request, response: express.Response) => {
     response.setHeader('Set-Cookie', ['Authorization=;Max-age=0']);
     response.send(200);
   };

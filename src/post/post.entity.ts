@@ -8,7 +8,7 @@ class Post {
   @Column()
   public title: string;
 
-  @Column
+  @Column()
   public content: string;
 }
 

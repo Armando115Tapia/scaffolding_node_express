@@ -1,8 +1,10 @@
-import express from 'express';
+import * as express from 'express';
+import * as bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
-import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import errorMiddleware from './middleware/error.middleware';
+
+// import 'reflect-metadata';
 
 const { MONGO_URI } = process.env;
 

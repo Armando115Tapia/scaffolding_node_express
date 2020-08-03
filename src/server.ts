@@ -9,6 +9,7 @@ const { PORT } = process.env;
 
 // ORM CONFIG
 import { createConnection } from 'typeorm';
+import 'reflect-metadata';
 import config from './ormconfig';
 
 validateEnv();

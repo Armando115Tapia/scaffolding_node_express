@@ -1,4 +1,4 @@
-import { Request, NextFunction } from 'express';
+import * as express from 'express';
 import jwt from 'jsonwebtoken';
 import DataStoredInToken from '../interfaces/dataStoredInToken.interface';
 import userModel from '../users/user.model';
@@ -6,9 +6,9 @@ import WrongAuthenticationTokenException from '../exceptions/WrongAuthentication
 import AuthenticationTokenMissingException from '../exceptions/AuthenticationTokenMissingException';
 
 const authMiddleware = async (
-  request: Request,
-  response: Response,
-  next: NextFunction
+  request: express.Request,
+  response: express.Response,
+  next: express.NextFunction
 ) => {
   const cookies = request.cookies;
   if (cookies && cookies.Authorization) {

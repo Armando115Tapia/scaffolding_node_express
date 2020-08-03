@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import * as express from 'express';
 import postModel from './posts.model';
 // import Post from './post.interface';
 import PostNotFoundException from '../exceptions/PostNotFoundException';
@@ -39,7 +39,10 @@ class PostsController {
       );
   }
 
-  getAllPosts = async (request: Request, response: Response) => {
+  getAllPosts = async (
+    request: express.Request,
+    response: express.Response
+  ) => {
     //========================================
     // WITH TYPEORM
     //========================================
@@ -53,9 +56,9 @@ class PostsController {
   };
 
   getPostById = async (
-    request: Request,
-    response: Response,
-    next: NextFunction
+    request: express.Request,
+    response: express.Response,
+    next: express.NextFunction
   ) => {
     const id = request.params?.id;
     try {
@@ -74,9 +77,9 @@ class PostsController {
     }
   };
   modifyPost = async (
-    request: Request,
-    response: Response,
-    next: NextFunction
+    request: express.Request,
+    response: express.Response,
+    next: express.NextFunction
   ) => {
     const id = request.params?.id;
     try {
@@ -99,9 +102,9 @@ class PostsController {
   };
 
   deletePost = async (
-    request: Request,
-    response: Response,
-    next: NextFunction
+    request: express.Request,
+    response: express.Response,
+    next: express.NextFunction
   ) => {
     const id = request.params?.id;
     try {
@@ -118,7 +121,7 @@ class PostsController {
       next(new PostNotFoundException(id));
     }
   };
-  createPost = async (request: Request, response: Response) => {
+  createPost = async (request: express.Request, response: express.Response) => {
     const postData: CreatePostDto = request.body;
 
     //========================================

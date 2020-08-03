@@ -1,5 +1,5 @@
 import Controller from '../interfaces/controller.interface';
-import express, { Request, Response, NextFunction } from 'express';
+import * as express from 'express';
 import userModel from '../users/user.model';
 
 class ReportController implements Controller {
@@ -15,9 +15,9 @@ class ReportController implements Controller {
   }
 
   private generateReport = async (
-    request: Request,
-    response: Response,
-    next: NextFunction
+    request: express.Request,
+    response: express.Response,
+    next: express.NextFunction
   ) => {
     const usersByCountries = await this.user.aggregate([
       {
