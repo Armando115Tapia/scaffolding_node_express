@@ -12,11 +12,15 @@ import WrongCredentialsException from '../exceptions/WrongCredentialsException';
 import User from '../users/user.interface';
 import TokenData from '../interfaces/tokenData.interface';
 import DataStoredInToken from '../interfaces/dataStoredInToken.interface';
+import RequestWithUser from '../interfaces/requestWithUser.interface';
+import AuthenticationService from './authentication.service';
+import authMiddleware from '../middleware/auth.middleware';
 
 class AuthenticationController implements Controller {
   path: string = '/auth';
   router: express.Router = express.Router();
   user = userModel;
+  public authenticationService = new AuthenticationService();
 
   constructor() {
     this.initializeRoutes();
@@ -34,6 +38,11 @@ class AuthenticationController implements Controller {
       this.loggingIn
     );
     this.router.post(`${this.path}/logout`, this.loggingOut);
+    this.router.post(
+      `${this.path}/2fa/generate`,
+      authMiddleware,
+      this.generateTwoFactorAuthenticationCode
+    );
   }
 
   private registration = async (
@@ -42,19 +51,30 @@ class AuthenticationController implements Controller {
     next: NextFunction
   ) => {
     const userData: CreateUserDTO = request.body;
-    if (await this.user.findOne({ email: userData.email })) {
-      next(new UserWithThatEmailAlreadyExistsException(userData.email));
-    } else {
-      const hashedPassword = await bcrypt.hash(userData.password, 10);
-      const user = await this.user.create({
-        ...userData,
-        password: hashedPassword,
-      });
-      user.password = 'XD';
-      const tokenData = this.createToken(user);
-      response.setHeader('Set-Cookie', [this.createCookie(tokenData)]);
+    try {
+      const { cookie, user } = await this.authenticationService.register(
+        userData
+      );
+      response.setHeader('Set-Cookie', [cookie]);
       response.send(user);
+    } catch (error) {
+      next(error);
     }
+  };
+
+  private generateTwoFactorAuthenticationCode = async (
+    request: RequestWithUser,
+    response: Response
+  ) => {
+    const user = request.user;
+    const {
+      otpauthUrl,
+      base32,
+    } = this.authenticationService.getTwoFactorAuthenticationCode();
+    await this.user.findByIdAndUpdate(user._id, {
+      twoFactorAuthenticationCode: base32,
+    });
+    this.authenticationService.respondWithQRCode(otpauthUrl, response);
   };
 
   private loggingIn = async (
