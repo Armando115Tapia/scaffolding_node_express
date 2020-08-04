@@ -47,6 +47,7 @@ class AuthenticationService {
       token: jwt.sign(dataStoredInToken, secret, { expiresIn }),
     };
   }
+
   public createCookie(tokenData: TokenData) {
     console.log('Token data: ', tokenData);
     return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}`;
@@ -63,6 +64,30 @@ class AuthenticationService {
   }
   public respondWithQRCode(data: string, response: Response) {
     QRCode.toFileStream(response, data);
+  }
+
+  public verifyTwoFactorAuthenticationCode(
+    twoFactorAuthenticationCode: string,
+    user: User
+  ) {
+    return speakeasy.totp.verify({
+      secret: user.twoFactorAuthenticationCode,
+      encoding: 'base32',
+      token: twoFactorAuthenticationCode,
+    });
+  }
+
+  public createToken_2FA(user: User, isSecondFactorAuthenticated = false) {
+    const expiresIn = 60 * 60; // an hour
+    const secret = process.env.JWT_SECRET;
+    const dataStoredInToken: DataStoredInToken = {
+      isSecondFactorAuthenticated,
+      _id: user._id,
+    };
+    return {
+      expiresIn,
+      token: jwt.sign(dataStoredInToken, secret, { expiresIn }),
+    };
   }
 }
 

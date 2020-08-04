@@ -15,6 +15,8 @@ import DataStoredInToken from '../interfaces/dataStoredInToken.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import AuthenticationService from './authentication.service';
 import authMiddleware from '../middleware/auth.middleware';
+import WrongAuthenticationTokenException from '../exceptions/WrongAuthenticationTokenException';
+import TwoFactorAuthenticationDto from './TwoFactorAuthentication.dto';
 
 class AuthenticationController implements Controller {
   path: string = '/auth';
@@ -42,6 +44,12 @@ class AuthenticationController implements Controller {
       `${this.path}/2fa/generate`,
       authMiddleware,
       this.generateTwoFactorAuthenticationCode
+    );
+    this.router.post(
+      `${this.path}/2fa/turn-on`,
+      validationMiddleware(TwoFactorAuthenticationDto),
+      authMiddleware,
+      this.turnOnTwoFactorAuthentication
     );
   }
 
@@ -75,6 +83,53 @@ class AuthenticationController implements Controller {
       twoFactorAuthenticationCode: base32,
     });
     this.authenticationService.respondWithQRCode(otpauthUrl, response);
+  };
+
+  private turnOnTwoFactorAuthentication = async (
+    request: RequestWithUser,
+    response: Response,
+    next: NextFunction
+  ) => {
+    const { twoFactorAuthenticationCode } = request.body;
+    const user = request.user;
+    const isCodeValid = await this.authenticationService.verifyTwoFactorAuthenticationCode(
+      twoFactorAuthenticationCode,
+      user
+    );
+
+    if (isCodeValid) {
+      await this.user.findByIdAndUpdate(user._id, {
+        isTwoFactorAuthenticationEnabled: true,
+      });
+      response.send('User authenticated with 2FA');
+    } else {
+      next(new WrongAuthenticationTokenException());
+    }
+  };
+
+  private secondFactorAuthentication = async (
+    request: RequestWithUser,
+    response: Response,
+    next: NextFunction
+  ) => {
+    const { twoFactorAuthenticationCode } = request.body;
+    const user = request.user;
+    const isCodeValid = await this.authenticationService.verifyTwoFactorAuthenticationCode(
+      twoFactorAuthenticationCode,
+      user
+    );
+
+    if (isCodeValid) {
+      const tokenData = this.authenticationService.createToken_2FA(user, true);
+      response.setHeader('Set-Cookie', [this.createCookie(tokenData)]);
+      response.send({
+        ...user,
+        password: 'XD',
+        twoFactorAuthenticationCode: undefined,
+      });
+    } else {
+      next(new WrongAuthenticationTokenException());
+    }
   };
 
   private loggingIn = async (
